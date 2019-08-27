@@ -1,23 +1,25 @@
-FROM google/cloud-sdk
+FROM python:3.7
 
-LABEL "name"="ingress-rules-editor"
-LABEL "version"="0.0.2"
-LABEL "maintainer"="Masashi Shibata <shibata_masashi@cyberagent.co.jp>"
-
-LABEL "com.github.actions.name"="GitHub Action to edit kubernetes ingress rules."
-LABEL "com.github.actions.description"="Edit kubernetes ingress rules."
-LABEL "com.github.actions.icon"="upload-cloud"
-LABEL "com.github.actions.color"="green"
-
-# gcc for cgo
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        g++ \
-        gcc \
-        libc6-dev \
-        make \
-        pkg-config \
-        wget \
+        apt-transport-https \
     && rm -rf /var/lib/apt/lists/*
+
+# repo for kubectl
+RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+RUN echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | tee -a /etc/apt/sources.list.d/kubernetes.list
+RUN apt-get update
+
+# Install kubectl
+RUN apt-get install -y kubectl
+
+# Install AWS CLI
+RUN pip install awscli --upgrade
+
+# Install aws-iam-authenticator
+RUN curl -o aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/linux/amd64/aws-iam-authenticator
+RUN chmod +x ./aws-iam-authenticator
+RUN mkdir -p $HOME/bin && cp ./aws-iam-authenticator $HOME/bin/aws-iam-authenticator && export PATH=$HOME/bin:$PATH
+RUN echo 'export PATH=$HOME/bin:$PATH' >> ~/.bashrc
 
 ENV GOLANG_VERSION 1.11.10
 
